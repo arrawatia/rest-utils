@@ -55,6 +55,7 @@
         <asynchttpclient.version>2.2.0</asynchttpclient.version>
         <guava.version>24.0-jre</guava.version>
         <checkstyle.suppressions.location>checkstyle/suppressions.xml</checkstyle.suppressions.location>
+        <kafka.version>6.0.0-ce-SNAPSHOT</kafka.version>
     </properties>
 
     <repositories>

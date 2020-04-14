@@ -19,7 +19,9 @@ package io.confluent.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.base.JsonParseExceptionMapper;
 
+import org.apache.kafka.clients.MetricUtils;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.metrics.MetricsContext;
 import org.eclipse.jetty.jaas.JAASLoginService;
 import org.eclipse.jetty.security.ConstraintMapping;
 import org.eclipse.jetty.security.ConstraintSecurityHandler;
@@ -66,10 +68,10 @@ import javax.servlet.DispatcherType;
 import javax.servlet.ServletException;
 import javax.ws.rs.core.Configurable;
 
-import io.confluent.common.metrics.JmxReporter;
-import io.confluent.common.metrics.MetricConfig;
-import io.confluent.common.metrics.Metrics;
-import io.confluent.common.metrics.MetricsReporter;
+import org.apache.kafka.common.metrics.JmxReporter;
+import org.apache.kafka.common.metrics.MetricConfig;
+import org.apache.kafka.common.metrics.Metrics;
+import org.apache.kafka.common.metrics.MetricsReporter;
 import io.confluent.rest.auth.AuthUtil;
 import io.confluent.rest.exceptions.ConstraintViolationExceptionMapper;
 import io.confluent.rest.exceptions.GenericExceptionMapper;
@@ -117,6 +119,11 @@ public abstract class Application<T extends RestConfig> {
         config.getConfiguredInstances(RestConfig.METRICS_REPORTER_CLASSES_CONFIG,
                                       MetricsReporter.class);
     reporters.add(new JmxReporter(config.getString(RestConfig.METRICS_JMX_PREFIX_CONFIG)));
+    for (MetricsReporter reporter : reporters) {
+      MetricsContext metricsContext = new MetricsContext();
+      metricsContext.metadata().putAll(MetricUtils.getMetricsValues(config.originals()));
+      reporter.contextChange(metricsContext);
+    }
     this.metrics = new Metrics(metricConfig, reporters, config.getTime());
 
     this.getMetricsTags().putAll(

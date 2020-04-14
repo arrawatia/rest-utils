@@ -20,8 +20,8 @@ import org.apache.kafka.common.config.AbstractConfig;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Importance;
-import io.confluent.common.utils.SystemTime;
-import io.confluent.common.utils.Time;
+import org.apache.kafka.common.utils.SystemTime;
+import org.apache.kafka.common.utils.Time;
 
 import io.confluent.rest.extension.ResourceExtension;
 import java.util.Arrays;

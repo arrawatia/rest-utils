@@ -16,8 +16,8 @@
 
 package io.confluent.rest.metrics;
 
-import io.confluent.common.metrics.stats.Percentile;
-import io.confluent.common.metrics.stats.Percentiles;
+import org.apache.kafka.common.metrics.stats.Percentile;
+import org.apache.kafka.common.metrics.stats.Percentiles;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.model.Resource;
@@ -41,14 +41,14 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import io.confluent.common.metrics.MetricName;
-import io.confluent.common.metrics.Metrics;
-import io.confluent.common.metrics.Sensor;
-import io.confluent.common.metrics.stats.Avg;
-import io.confluent.common.metrics.stats.Count;
-import io.confluent.common.metrics.stats.Max;
-import io.confluent.common.metrics.stats.Rate;
-import io.confluent.common.utils.Time;
+import org.apache.kafka.common.MetricName;
+import org.apache.kafka.common.metrics.Metrics;
+import org.apache.kafka.common.metrics.Sensor;
+import org.apache.kafka.common.metrics.stats.Avg;
+import org.apache.kafka.common.metrics.stats.Count;
+import org.apache.kafka.common.metrics.stats.Max;
+import org.apache.kafka.common.metrics.stats.Rate;
+import org.apache.kafka.common.utils.Time;
 import io.confluent.rest.annotations.PerformanceMetric;
 
 import javax.ws.rs.WebApplicationException;
