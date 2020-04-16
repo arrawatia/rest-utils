@@ -121,6 +121,8 @@ public abstract class Application<T extends RestConfig> {
     reporters.add(new JmxReporter(config.getString(RestConfig.METRICS_JMX_PREFIX_CONFIG)));
     for (MetricsReporter reporter : reporters) {
       MetricsContext metricsContext = new MetricsContext();
+      metricsContext.metadata().put(MetricUtils.METRICS_CONTEXT_NAMESPACE_KEY,
+          config.getString(RestConfig.METRICS_JMX_PREFIX_CONFIG));
       metricsContext.metadata().putAll(MetricUtils.getMetricsValues(config.originals()));
       reporter.contextChange(metricsContext);
     }
