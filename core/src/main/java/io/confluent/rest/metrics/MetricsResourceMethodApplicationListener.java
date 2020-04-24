@@ -16,8 +16,6 @@
 
 package io.confluent.rest.metrics;
 
-import org.apache.kafka.common.metrics.stats.Percentile;
-import org.apache.kafka.common.metrics.stats.Percentiles;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.model.Resource;
@@ -41,17 +39,20 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.kafka.common.MetricName;
-import org.apache.kafka.common.metrics.Metrics;
-import org.apache.kafka.common.metrics.Sensor;
-import org.apache.kafka.common.metrics.stats.Avg;
-import org.apache.kafka.common.metrics.stats.Count;
-import org.apache.kafka.common.metrics.stats.Max;
-import org.apache.kafka.common.metrics.stats.Rate;
-import org.apache.kafka.common.utils.Time;
 import io.confluent.rest.annotations.PerformanceMetric;
 
 import javax.ws.rs.WebApplicationException;
+
+import org.apache.kafka.common.MetricName;
+import org.apache.kafka.common.metrics.Metrics;
+import org.apache.kafka.common.metrics.stats.Avg;
+import org.apache.kafka.common.metrics.stats.Max;
+import org.apache.kafka.common.metrics.stats.Percentile;
+import org.apache.kafka.common.metrics.stats.Percentiles;
+import org.apache.kafka.common.metrics.stats.WindowedCount;
+import org.apache.kafka.common.metrics.stats.Rate;
+import org.apache.kafka.common.metrics.Sensor;
+import org.apache.kafka.common.utils.Time;
 
 /**
  * Jersey ResourceMethodApplicationListener that records metrics for each endpoint by listening
@@ -188,7 +189,7 @@ public class MetricsResourceMethodApplicationListener implements ApplicationEven
       MetricName metricName = new MetricName(
           getName(method, annotation, "request-rate"), metricGrpName,
           "The average number of HTTP requests per second.", metricTags);
-      this.requestSizeSensor.add(metricName, new Rate(new Count()));
+      this.requestSizeSensor.add(metricName, new Rate(new WindowedCount()));
       metricName = new MetricName(
           getName(method, annotation, "request-byte-rate"), metricGrpName,
           "Bytes/second of incoming requests", metricTags);
@@ -206,7 +207,7 @@ public class MetricsResourceMethodApplicationListener implements ApplicationEven
       metricName = new MetricName(
           getName(method, annotation, "response-rate"), metricGrpName,
           "The average number of HTTP responses per second.", metricTags);
-      this.responseSizeSensor.add(metricName, new Rate(new Count()));
+      this.responseSizeSensor.add(metricName, new Rate(new WindowedCount()));
       metricName = new MetricName(
           getName(method, annotation, "response-byte-rate"), metricGrpName,
           "Bytes/second of outgoing responses", metricTags);

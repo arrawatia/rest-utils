@@ -17,13 +17,14 @@
 package io.confluent.rest;
 
 import org.apache.kafka.common.config.AbstractConfig;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.common.config.ConfigDef.Type;
 import org.apache.kafka.common.config.ConfigDef.Importance;
-import org.apache.kafka.common.utils.SystemTime;
 import org.apache.kafka.common.utils.Time;
 
 import io.confluent.rest.extension.ResourceExtension;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -300,6 +301,15 @@ public class RestConfig extends AbstractConfig {
   public static final String REQUEST_QUEUE_CAPACITY_GROWBY_DOC =
           "The size of request queue will be increased by.";
   public static final int REQUEST_QUEUE_CAPACITY_GROWBY_DEFAULT = 64;
+
+  /**
+   * @link "https://www.eclipse.org/jetty/documentation/current/header-filter.html"
+   * @link "https://www.eclipse.org/jetty/javadoc/9.4.28.v20200408/org/eclipse/jetty/servlets/HeaderFilter.html"
+   **/
+  public static final String RESPONSE_HTTP_HEADERS_CONFIG = "response.http.headers.config";
+  public static final String RESPONSE_HTTP_HEADERS_DOC =
+          "Set values for Jetty HTTP response headers";
+  public static final String RESPONSE_HTTP_HEADERS_DEFAULT = "";
 
   public static ConfigDef baseConfigDef() {
     return baseConfigDef(
@@ -644,10 +654,16 @@ public class RestConfig extends AbstractConfig {
             REQUEST_QUEUE_CAPACITY_GROWBY_DEFAULT,
             Importance.LOW,
             REQUEST_QUEUE_CAPACITY_GROWBY_DOC
+        ).define(
+            RESPONSE_HTTP_HEADERS_CONFIG,
+            Type.STRING,
+            RESPONSE_HTTP_HEADERS_DEFAULT,
+            Importance.LOW,
+            RESPONSE_HTTP_HEADERS_DOC
         );
   }
 
-  private static Time defaultTime = new SystemTime();
+  private static Time defaultTime = Time.SYSTEM;
 
   public RestConfig(ConfigDef definition, Map<?, ?> originals) {
     super(definition, originals);
@@ -659,5 +675,51 @@ public class RestConfig extends AbstractConfig {
 
   public Time getTime() {
     return defaultTime;
+  }
+
+  public static void validateHttpResponseHeaderConfig(String config) {
+    try {
+      // validate format
+      String[] configTokens = config.trim().split("\\s+", 2);
+      if (configTokens.length != 2) {
+        throw new ConfigException(String.format("Invalid format of header config \"%s\". "
+                + "Expected: \"[ation] [header name]:[header value]\"", config));
+      }
+
+      // validate action
+      String method = configTokens[0].trim();
+      validateHeaderConfigAction(method.toLowerCase());
+
+      // validate header name and header value pair
+      String header = configTokens[1];
+      String[] headerTokens = header.trim().split(":");
+      if (headerTokens.length > 2) {
+        throw new ConfigException(
+                String.format("Invalid format of header name and header value pair \"%s\". "
+                + "Expected: \"[header name]:[header value]\"", header));
+      }
+
+      // validate header name
+      String headerName = headerTokens[0].trim();
+      if (headerName.contains(" ")) {
+        throw new ConfigException(String.format("Invalid header name \"%s\". "
+                + "The \"[header name]\" cannot contain whitespace", headerName));
+      }
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new ConfigException(String.format("Invalid header config \"%s\".", config), e);
+    }
+  }
+
+  private static void validateHeaderConfigAction(String action) {
+    /**
+     * The following actions are defined following link.
+     * {@link https://www.eclipse.org/jetty/documentation/current/header-filter.html}
+     **/
+    if (!Arrays.asList("set", "add", "setDate", "addDate")
+            .stream()
+            .anyMatch(action::equalsIgnoreCase)) {
+      throw new ConfigException(String.format("Invalid header config action: \"%s\". "
+              + "The action need be one of [\"set\", \"add\", \"setDate\", \"addDate\"]", action));
+    }
   }
 }

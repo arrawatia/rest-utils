@@ -31,7 +31,9 @@ public class TestMetricsReporter implements MetricsReporter {
     metricTimeseries.add(metric);
   }
 
+  @Override
   public void metricRemoval(KafkaMetric kafkaMetric) {
+
   }
 
   public static List<KafkaMetric> getMetricTimeseries() {
