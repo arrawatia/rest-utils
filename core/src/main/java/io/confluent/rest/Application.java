@@ -19,8 +19,8 @@ package io.confluent.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.base.JsonParseExceptionMapper;
 
-import org.apache.kafka.clients.MetricUtils;
 import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.metrics.MetricUtils;
 import org.apache.kafka.common.metrics.MetricsContext;
 import org.eclipse.jetty.jaas.JAASLoginService;
 import org.eclipse.jetty.security.ConstraintMapping;
@@ -114,22 +114,22 @@ public abstract class Application<T extends RestConfig> {
     this.config = config;
     this.path = Objects.requireNonNull(path);;
 
-    MetricConfig metricConfig = new MetricConfig()
-        .samples(config.getInt(RestConfig.METRICS_NUM_SAMPLES_CONFIG))
-        .timeWindow(config.getLong(RestConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG),
-                    TimeUnit.MILLISECONDS);
     List<MetricsReporter> reporters =
         config.getConfiguredInstances(RestConfig.METRICS_REPORTER_CLASSES_CONFIG,
                                       MetricsReporter.class);
     reporters.add(new JmxReporter(config.getString(RestConfig.METRICS_JMX_PREFIX_CONFIG)));
-    for (MetricsReporter reporter : reporters) {
-      MetricsContext metricsContext = new MetricsContext();
-      metricsContext.metadata().put(MetricUtils.METRICS_CONTEXT_NAMESPACE_KEY,
-          config.getString(RestConfig.METRICS_JMX_PREFIX_CONFIG));
-      metricsContext.metadata().putAll(MetricUtils.getMetricsValues(config.originals()));
-      reporter.contextChange(metricsContext);
-    }
-    this.metrics = new Metrics(metricConfig, reporters, config.getTime());
+
+    MetricConfig metricConfig = new MetricConfig()
+        .samples(config.getInt(RestConfig.METRICS_NUM_SAMPLES_CONFIG))
+        .timeWindow(config.getLong(RestConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG),
+            TimeUnit.MILLISECONDS);
+
+    MetricsContext metricsContext = new MetricsContext();
+    metricsContext.metadata().put(MetricUtils.METRICS_CONTEXT_NAMESPACE_KEY,
+        config.getString(RestConfig.METRICS_JMX_PREFIX_CONFIG));
+    metricsContext.metadata().putAll(MetricUtils.getMetricsValues(config.originals()));
+
+    this.metrics = new Metrics(metricConfig, reporters, config.getTime(), metricsContext);
 
     this.getMetricsTags().putAll(
             parseListToMap(config.getList(RestConfig.METRICS_TAGS_CONFIG)));
