@@ -19,8 +19,9 @@ package io.confluent.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.jaxrs.base.JsonParseExceptionMapper;
 
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.metrics.MetricUtils;
+import org.apache.kafka.common.metrics.KafkaMetricsContext;
 import org.apache.kafka.common.metrics.MetricsContext;
 import org.eclipse.jetty.jaas.JAASLoginService;
 import org.eclipse.jetty.security.ConstraintMapping;
@@ -117,17 +118,18 @@ public abstract class Application<T extends RestConfig> {
     List<MetricsReporter> reporters =
         config.getConfiguredInstances(RestConfig.METRICS_REPORTER_CLASSES_CONFIG,
                                       MetricsReporter.class);
-    reporters.add(new JmxReporter(config.getString(RestConfig.METRICS_JMX_PREFIX_CONFIG)));
+    reporters.add(new JmxReporter());
 
     MetricConfig metricConfig = new MetricConfig()
         .samples(config.getInt(RestConfig.METRICS_NUM_SAMPLES_CONFIG))
         .timeWindow(config.getLong(RestConfig.METRICS_SAMPLE_WINDOW_MS_CONFIG),
             TimeUnit.MILLISECONDS);
 
-    MetricsContext metricsContext = new MetricsContext();
-    metricsContext.metadata().put(MetricUtils.METRICS_CONTEXT_NAMESPACE_KEY,
-        config.getString(RestConfig.METRICS_JMX_PREFIX_CONFIG));
-    metricsContext.metadata().putAll(MetricUtils.getMetricsValues(config.originals()));
+    Map<String, Object> metadata = new HashMap<>();
+    metadata.putAll(config.originalsWithPrefix(CommonClientConfigs.METRICS_CONTEXT_PREFIX));
+
+    MetricsContext metricsContext =
+        new KafkaMetricsContext(config.getString(RestConfig.METRICS_JMX_PREFIX_CONFIG), metadata);
 
     this.metrics = new Metrics(metricConfig, reporters, config.getTime(), metricsContext);
 
